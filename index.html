@@ -1,1 +1,278 @@
 
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Health System</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {font-family: Arial;background:#f2f7ff;margin:0;}
+header {background:#1a73e8;color:white;padding:15px;text-align:center;font-size:22px;}
+.container {max-width:900px;margin:auto;padding:20px;}
+.card {background:white;padding:20px;margin-bottom:20px;border-radius:10px;box-shadow:0 0 10px #ccc;}
+input {width:100%;padding:10px;margin:10px 0;}
+button {background:#1a73e8;color:white;border:none;padding:12px;width:100%;cursor:pointer;margin-top:5px;}
+img {max-width:100px;margin-top:10px;}
+a {display:block;margin:6px 0;color:#1a73e8;}
+</style>
+</head>
+
+<body>
+
+<header>🏥 Smart Health System</header>
+
+<div class="container">
+
+<div class="card">
+<h3>👤 Patient Details</h3>
+<input id="name" placeholder="Patient Name">
+<input id="age" placeholder="Age">
+<input id="address" placeholder="Address">
+
+<input type="file" id="photo" accept="image/*" onchange="previewPhoto()">
+<img id="preview" style="display:none;">
+</div>
+
+<div class="card">
+<h3>🩺 Health Details</h3>
+<input id="bp" placeholder="BP">
+<input id="temp" placeholder="Temperature">
+<input id="pulse" placeholder="Pulse">
+</div>
+
+<div class="card">
+<h3>💊 Medicines</h3>
+<button onclick="addMed('Paracetamol')">Paracetamol</button>
+<button onclick="addMed('Ibuprofen')">Ibuprofen</button>
+<button onclick="addMed('Amoxicillin')">Amoxicillin</button>
+
+<p id="cart"></p>
+
+<button onclick="showDoctor()">Next</button>
+</div>
+
+<!-- 👨‍⚕️ DOCTOR -->
+<div class="card" id="doctorBox" style="display:none;">
+<h3>👨‍⚕️ Doctor Verification</h3>
+
+<p><b>Available Doctor:</b></p>
+<p>Dr. Raj Sharma</p>
+<p>📞 9876543210</p>
+
+<button onclick="callDocVerify()">📞 डॉक्टर से बात करें (OTP लें)</button>
+
+<input id="docName" placeholder="Doctor Name (Dr. Raj Sharma)">
+<input id="otp" placeholder="OTP (Call karke lein)">
+<button onclick="verifyDoctor()">Verify</button>
+</div>
+
+<div class="card" id="payBox" style="display:none;">
+<button onclick="downloadPDF()">Download Prescription</button>
+</div>
+
+<!-- 🚨 EMERGENCY -->
+<div class="card">
+<h3>🚨 इमरजेंसी सहायता</h3>
+
+<button onclick="callDoctor()">📞 डॉक्टर को कॉल करें</button>
+<button onclick="sendLocation()">📍 लाइव लोकेशन भेजें</button>
+<button onclick="callAmbulance()">🚑 एम्बुलेंस (108)</button>
+
+<p id="status"></p>
+</div>
+
+<!-- ⚠️ GOV COMPLAINT -->
+<div class="card">
+<h3>⚠️ सरकारी शिकायत (Government Complaint)</h3>
+
+<p>अगर इलाज में कोई समस्या हो तो यहाँ शिकायत करें:</p>
+
+<a href="https://pgportal.gov.in/" target="_blank">🏛️ CPGRAMS Complaint Portal</a>
+<a href="https://meraaspatal.nhp.gov.in/" target="_blank">🏥 Mera Aspatal</a>
+<a href="https://consumerhelpline.gov.in/" target="_blank">⚖️ Consumer Helpline</a>
+
+<p style="color:red;">⚠️ समस्या होने पर शिकायत जरूर करें</p>
+</div>
+
+</div>
+
+<script>
+
+let medicines=[];
+let patientImage="";
+
+// 🔊 VOICE
+let hindiVoice;
+
+function loadVoices(){
+ let voices = speechSynthesis.getVoices();
+ hindiVoice = voices.find(v=>v.lang.includes("hi")) || voices[0];
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+
+function speak(text){
+ let msg = new SpeechSynthesisUtterance(text);
+ msg.voice = hindiVoice;
+ msg.lang="hi-IN";
+ speechSynthesis.speak(msg);
+}
+
+// 📸 PHOTO
+function previewPhoto(){
+ let file=document.getElementById("photo").files[0];
+ let reader=new FileReader();
+
+ reader.onload=function(e){
+  patientImage=e.target.result;
+  document.getElementById("preview").src=patientImage;
+  document.getElementById("preview").style.display="block";
+ }
+
+ if(file) reader.readAsDataURL(file);
+}
+
+// 💊 MEDICINE
+function addMed(name){
+ let dose=prompt("दिन में कितनी बार?");
+ let time=prompt("Day / Night?");
+ let food=prompt("खाने से पहले या बाद में?");
+
+ let line=(time.toLowerCase()=="day"?"दिन में ":"रात में ")
+ +dose+" बार, "+food;
+
+ medicines.push({name,line});
+
+ document.getElementById("cart").innerText=
+ medicines.map(m=>"• "+m.name+" → "+m.line).join("\n");
+}
+
+// 👨‍⚕️ SHOW DOCTOR
+function showDoctor(){
+ document.getElementById("doctorBox").style.display="block";
+}
+
+// 📞 CALL DOCTOR
+function callDocVerify(){
+ window.location.href="tel:9876543210";
+ speak("डॉक्टर से संपर्क किया जा रहा है, कृपया ओटीपी प्राप्त करें");
+}
+
+// ✅ VERIFY
+function verifyDoctor(){
+ let name=document.getElementById("docName").value.toLowerCase();
+ let otp=document.getElementById("otp").value;
+
+ if(name!=="dr. raj sharma"){
+  alert("डॉक्टर का नाम गलत है");
+  return;
+ }
+
+ if(otp==="123456"){
+  alert("Doctor verified successfully");
+  document.getElementById("payBox").style.display="block";
+ } else {
+  alert("गलत OTP");
+ }
+}
+
+// 📄 PDF
+function downloadPDF(){
+
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+
+ let y=15;
+
+ doc.setFontSize(16);
+ doc.text("HEALTH CARE PRESCRIPTION",40,y);
+
+ let date=new Date().toLocaleString();
+ doc.setFontSize(10);
+ doc.text("Date: "+date,140,10);
+
+ y+=10;
+
+ doc.rect(10,y,190,30);
+ doc.text("Name: "+val("name"),15,y+8);
+ doc.text("Age: "+val("age"),120,y+8);
+ doc.text("Address: "+val("address"),15,y+16);
+
+ if(patientImage){
+  doc.addImage(patientImage,'JPEG',150,20,40,40);
+ }
+
+ y+=40;
+
+ doc.text("BP: "+val("bp"),15,y);
+ doc.text("Temp: "+val("temp"),80,y);
+ doc.text("Pulse: "+val("pulse"),140,y);
+
+ y+=10;
+
+ doc.text("Rx",15,y);
+ y+=8;
+
+ medicines.forEach((m,i)=>{
+  doc.text((i+1)+". "+m.name+" → "+m.line,15,y);
+  y+=7;
+ });
+
+ y+=10;
+
+ doc.text("Doctor: "+val("docName"),15,y);
+ doc.text("Sign: ____________",120,y);
+
+ y+=20;
+
+ doc.setDrawColor(255,0,0);
+ doc.circle(100,y,18);
+ doc.setTextColor(255,0,0);
+ doc.text("GOVT APPROVED",75,y);
+
+ doc.save("Prescription.pdf");
+}
+
+// 🚨 EMERGENCY
+function callDoctor(){
+ window.location.href="tel:9876543210";
+ speak("डॉक्टर को कॉल किया जा रहा है");
+}
+
+function callAmbulance(){
+ window.location.href="tel:108";
+ speak("एम्बुलेंस को कॉल किया जा रहा है");
+}
+
+function sendLocation(){
+
+ if(!navigator.geolocation){
+  alert("लोकेशन सपोर्ट नहीं है");
+  return;
+ }
+
+ document.getElementById("status").innerText="लोकेशन भेजी जा रही है...";
+
+ navigator.geolocation.getCurrentPosition(function(pos){
+
+  let link="https://www.google.com/maps?q="+pos.coords.latitude+","+pos.coords.longitude;
+
+  window.open("https://wa.me/?text="+encodeURIComponent("Emergency Location:\n"+link));
+
+  document.getElementById("status").innerText="लोकेशन भेज दी गई";
+
+  speak("कृपया निश्चिंत रहें, जल्द ही हमारे डॉक्टर आपके पास आएंगे");
+
+ });
+}
+
+function val(id){
+ return document.getElementById(id).value;
+}
+
+</script>
+
+</body>
+</html>
